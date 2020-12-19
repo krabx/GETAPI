@@ -16,6 +16,7 @@ foreach ($json_parc as $arr) {
     }
 }
 $database = mysqli_connect('localhost:3306', 'bogdan', 'Lost1996!', 'finhub');
+//$database = mysqli_connect('localhost', 'root', 'root', 'finance');
     extract ($_GET);
     $fin_var = file_get_contents("https://api.binance.com/api/v3/klines?symbol=$currency_pair&interval=$timeframe&limit=1");
     $arr = json_decode($fin_var);
@@ -29,14 +30,19 @@ $database = mysqli_connect('localhost:3306', 'bogdan', 'Lost1996!', 'finhub');
     elseif ($res[0] < 1 && !empty ($_GET['key_id']) && !empty ($_GET['currency_pair']) && !empty ($_GET['timeframe'])){
         $insert = "INSERT INTO `change_price` (key_id, currency_pair, timeframe, last_price) VALUES ('$key_id', '$currency_pair', '$timeframe', '$last_price')";
         mysqli_query($database,$insert);
-        echo 'Первый запрос. Цена на текущий момент составляет' . ' ' . $last_price;
+        //echo 'Первый запрос. Цена на текущий момент составляет' . ' ' . $last_price;
+        $data = ['ID'=>$_GET['key_id'], 'PAIR'=>$_GET['currency_pair'], 'TIMEFRAME'=>$_GET['timeframe'], 'LAST PRICE'=>$last_price, 'CURRENT PRICE'=>$res_change_price, 'CHANGE'=>$delta];
+        echo json_encode($data);
     }
     elseif ($res[0] >=1 && !empty ($_GET['key_id']) && !empty ($_GET['currency_pair']) && !empty ($_GET['timeframe'])){
         $change_price = mysqli_query($database,"SELECT `last_price` FROM change_price WHERE key_id = '$key_id' AND `currency_pair` = '$currency_pair' AND timeframe = '$timeframe'");
         $res_change_price = mysqli_fetch_row($change_price)[0];
-        echo 'Обновили ценник.' . ' ' . 'Изменение цены с последнего запроса составляет' . ' ' . $delta = round((100*(($last_price - $res_change_price)/$res_change_price)),3) . '%';
+        $delta = round((100*(($last_price - $res_change_price)/$res_change_price)),3);
+        //echo 'Обновили ценник.' . ' ' . 'Изменение цены с последнего запроса составляет' . ' ' . $delta = round((100*(($last_price - $res_change_price)/$res_change_price)),3) . '%';
         $update = "UPDATE `change_price` SET `last_price` = '$last_price' WHERE `key_id` = '$key_id' AND `currency_pair` = '$currency_pair' AND timeframe = '$timeframe'";
         mysqli_query($database,$update);
+        $data = ['ID'=>$_GET['key_id'], 'PAIR'=>$_GET['currency_pair'], 'TIMEFRAME'=>$_GET['timeframe'], 'LAST PRICE'=>$last_price, 'CURRENT PRICE'=>$res_change_price, 'CHANGE'=>$delta];
+        echo json_encode($data);
     }
 ?>
 
